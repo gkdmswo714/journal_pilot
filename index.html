@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>앨범 뒤의 사람들</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root {
+    --bg: #ffffff;
+    --ink: #1f1f1f;
+    --muted: #8a8a8a;
+    --line: 1.8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: auto; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-weight: 400;              /* Regular */
+    line-height: 1.7;
+    letter-spacing: -0.01em;
+    word-break: keep-all;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+  /* 굵기는 딱 세 가지만: 700 / 600 / 400 */
+  .w-bold { font-weight: 700; }
+  .w-semi { font-weight: 600; }
+
+  /* ---------- 헤더 ---------- */
+  header.top {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 24px 0;
+    font-size: 15px;
+  }
+  header.top .logo { font-weight: 700; }
+  header.top nav { display: flex; gap: 24px; font-weight: 600; }
+  header.top nav a:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+  /* ---------- 히어로 ---------- */
+  .hero {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
+    align-items: center;
+    min-height: calc(100vh - 80px);
+    padding: 16px 0 40px;
+  }
+  .hero .eyebrow { font-weight: 600; font-size: 14px; color: var(--muted); letter-spacing: 0.08em; }
+  .hero h1 { font-weight: 700; font-size: clamp(40px, min(7vw, 9vh), 88px); line-height: 1.1; letter-spacing: -0.04em; margin: 16px 0 24px; }
+  .hero p.lead { font-size: 18px; max-width: 26em; }
+  .hero .meta { margin-top: 32px; font-size: 14px; color: var(--muted); }
+  .hero .meta b { font-weight: 600; color: var(--ink); }
+  .hero-art { width: 100%; max-width: 520px; max-height: calc(100vh - 120px); justify-self: center; overflow: visible; }
+
+  /* 첫 화면: 파일럿 인터뷰 + 사람별 바로가기 */
+  .pilot { margin-top: 36px; }
+  .pilot-label { font-weight: 700; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+  .pilot-label span { font-weight: 600; font-size: 13px; color: var(--muted); }
+  .pilot-btns { display: flex; flex-wrap: wrap; gap: 20px 16px; margin-top: 14px; padding-bottom: 28px; }
+  .pilot-btns .bubble { padding: 12px 18px; display: flex; align-items: baseline; gap: 10px; transition: transform .2s ease; }
+  .pilot-btns a:hover .bubble { transform: translateY(-3px) rotate(-1deg); }
+  .pilot-btns .pn { font-weight: 600; font-size: 12px; color: var(--muted); }
+  .pilot-btns .pname { font-weight: 700; font-size: 16px; }
+  .pilot-btns .prole { font-size: 13px; color: var(--muted); }
+  .pilot-btns .arrow { font-weight: 600; }
+
+  /* 연필 선 느낌: 모든 말풍선 선에 공통 적용 */
+  .ink { fill: #fff; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .sym { font-family: inherit; font-weight: 400; font-size: 30px; fill: var(--ink); text-anchor: middle; }
+  .hero-art g.pop {
+    transform-box: fill-box; transform-origin: center;
+    animation: pop .7s cubic-bezier(.2, 1.5, .4, 1) both;
+    animation-delay: calc(var(--i) * 90ms + 150ms);
+    cursor: default;
+  }
+  .hero-art g.pop:hover { animation: wiggle .5s ease-in-out; }
+  .hero-art a { cursor: pointer; }
+  .hero-art .ink { filter: url(#pencil); }
+  .hero-art .num { font-family: inherit; font-weight: 600; font-size: 28px; fill: var(--ink); }
+  .hero-art use { color: var(--ink); }
+  .hero .hint { margin-top: 8px; font-size: 13px; color: var(--muted); }
+
+  /* 질문 아이콘 */
+  .ic { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .qic { width: 22px; height: 22px; vertical-align: -5px; margin-right: 8px; color: var(--ink); }
+
+  /* 대화 속 섹션 구분 */
+  .sec { display: flex; align-items: center; gap: 16px; font-weight: 700; font-size: 18px; margin-top: 24px; }
+  .sec::after { content: ""; flex: 1; height: 0; border-top: 1px solid var(--ink); }
+  .sec span { font-weight: 600; color: var(--muted); font-size: 14px; }
+  .msg.a .bubble p + p { margin-top: 12px; }
+  .msg.q { scroll-margin-top: 80px; }
+  .msg.q.flash .bubble { animation: wiggle .6s ease-in-out 2; }
+  .note { font-size: 13px; color: var(--muted); margin-top: 20px; }
+  @keyframes pop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: scale(1); } }
+  @keyframes wiggle { 0%,100% { transform: rotate(0) } 30% { transform: rotate(-4deg) } 65% { transform: rotate(3deg) } }
+
+  /* ---------- 섹션 제목 ---------- */
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; padding: 72px 0 40px; border-top: var(--line) solid var(--ink); }
+  .section-head h2 { font-weight: 700; font-size: 28px; letter-spacing: -0.03em; }
+  .section-head span { font-weight: 600; font-size: 14px; color: var(--muted); }
+
+  /* ---------- 공통 말풍선 ---------- */
+  .bubble {
+    position: relative;
+    display: inline-block;
+    padding: 22px 28px;
+    max-width: 100%;
+  }
+  .bubble::before {
+    content: ""; position: absolute; inset: 0; z-index: 0;
+    background: #fff;
+    border: var(--line) solid var(--ink);
+    filter: url(#pencil-soft);
+  }
+  .bubble > :not(.tail) { position: relative; z-index: 2; }
+  .bubble .tail {
+    position: absolute; z-index: 1;
+    top: calc(100% - 4px);
+    width: 34px; height: 32px;
+    overflow: visible;
+    filter: url(#pencil);
+  }
+  .bubble .tail path { fill: #fff; stroke: var(--ink); stroke-width: var(--line); stroke-linejoin: round; }
+  .bubble--rect::before  { border-radius: 3px; }
+  .bubble--round::before { border-radius: 36px; }
+  .bubble--oval::before  { border-radius: 50%; }
+  .bubble--oval { padding: 44px 56px; text-align: center; }
+  .tail-left   .tail { left: 32px; }
+  .tail-right  .tail { right: 40px; transform: scaleX(-1); }
+  .tail-center .tail { left: calc(50% - 10px); }
+
+  /* ---------- 인터뷰 목록 카드 ---------- */
+  .cards {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 56px 32px; padding-bottom: 96px;
+  }
+  .card { display: flex; flex-direction: column; align-items: flex-start; }
+  .card:nth-child(3n+2) { margin-top: 48px; }
+  .card .bubble { width: 100%; min-height: 210px; display: flex; flex-direction: column; justify-content: center; transition: transform .25s ease; }
+  .card .bubble--oval { min-height: 240px; align-items: center; }
+  .card:hover .bubble { transform: translateY(-6px) rotate(-1deg); }
+  .card .no { font-weight: 600; font-size: 13px; color: var(--muted); }
+  .card .name { font-weight: 700; font-size: 22px; margin: 6px 0 4px; }
+  .card .role { font-size: 14px; color: var(--muted); }
+  .card .snip { font-size: 15px; margin-top: 14px; }
+  .card .more { margin-top: 48px; font-weight: 600; font-size: 14px; }
+  .card:hover .more { text-decoration: underline; text-underline-offset: 4px; }
+
+  /* ---------- 인터뷰 본문 ---------- */
+  .interview { padding-bottom: 120px; }
+  .iv-head { display: grid; grid-template-columns: 1fr 2fr; gap: 32px; padding: 72px 0 48px; border-top: var(--line) solid var(--ink); }
+  .iv-head .no { font-weight: 600; font-size: 14px; color: var(--muted); }
+  .iv-head h3 { font-weight: 700; font-size: clamp(32px, 4.5vw, 52px); line-height: 1.15; letter-spacing: -0.035em; margin-top: 8px; }
+  .iv-head .role { font-weight: 600; font-size: 16px; margin-top: 10px; }
+  .iv-head dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 14px; margin-top: 24px; }
+  .iv-head dt { font-weight: 600; color: var(--muted); }
+  .iv-head .intro { font-size: 17px; align-self: end; }
+
+  .quote-cloud { position: relative; margin: 24px auto 72px; max-width: 640px; padding: 64px 80px; text-align: center; }
+  .quote-cloud svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: url(#pencil-soft); }
+  .quote-cloud svg path { fill: #fff; stroke: var(--ink); stroke-width: var(--line); stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+  .quote-cloud p { position: relative; font-weight: 700; font-size: clamp(20px, 2.6vw, 28px); line-height: 1.45; letter-spacing: -0.02em; }
+
+  .dialogue { max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+  .msg { display: flex; flex-direction: column; max-width: 82%; }
+  .msg .who { font-weight: 600; font-size: 13px; color: var(--muted); margin: 0 0 8px 4px; }
+  .msg.q { align-self: flex-start; }
+  .msg.a { align-self: flex-end; align-items: flex-end; }
+  .msg.a .who { margin: 0 6px 8px 0; }
+  .msg.q .bubble { font-weight: 600; }
+  .msg.q .bubble b { font-weight: 700; margin-right: 8px; }
+  .msg.a .bubble { font-size: 16.5px; padding: 24px 32px; }
+
+  .to-top { display: inline-block; margin-top: 72px; font-weight: 600; font-size: 14px; }
+  .to-top:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+  footer { border-top: var(--line) solid var(--ink); padding: 32px 0 48px; font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; }
+  footer b { font-weight: 600; color: var(--ink); }
+
+  /* 스크롤 등장 */
+  .reveal { opacity: 0; transform: translateY(16px) scale(.97); transition: opacity .6s ease, transform .6s cubic-bezier(.2, 1.2, .4, 1); }
+  .reveal.in { opacity: 1; transform: none; }
+
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; min-height: auto; }
+    .hero-art { max-width: 380px; }
+    .cards { grid-template-columns: 1fr; }
+    .card:nth-child(3n+2) { margin-top: 0; }
+    .iv-head { grid-template-columns: 1fr; }
+    .msg { max-width: 94%; }
+    .quote-cloud { padding: 48px 44px; }
+  }
+  @media (max-width: 480px) {
+    .wrap { padding: 0 16px; }
+    header.top nav { gap: 14px; }
+    .bubble--oval { padding: 36px 32px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .hero-art g.pop, .hero-art g.pop:hover { animation: none; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+  }
+
+  /* ---------- 화면 구성: 첫 화면(한 장, 스크롤 없음) / 인터뷰 화면(스크롤) ---------- */
+  html.home { overflow: hidden; }
+  html.home #interviews, html.home footer { display: none; }
+  html.reading .hero { display: none; }
+  .interview { display: none; }
+  .interview.active { display: block; }
+  .interview .back { display: inline-block; margin: 8px 0 28px; font-weight: 600; font-size: 14px; }
+  .interview .back:hover, .iv-foot a:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .iv-foot { display: flex; justify-content: space-between; margin-top: 72px; font-weight: 600; font-size: 14px; }
+  header.top nav a.on { text-decoration: underline; text-underline-offset: 4px; }
+  @media (max-width: 860px) { html.home { overflow: auto; } }   /* 휴대폰은 첫 화면이 한 장에 안 들어가서 예외 */
+</style>
+</head>
+<body>
+
+<!-- 연필로 그린 듯 살짝 흔들리는 선 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="pencil" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <!-- 큰 말풍선용: 더 느슨하게 흔들려서 선이 끊기지 않음 -->
+  <filter id="pencil-soft" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="5" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+
+  <!-- 질문별 아이콘 (번호 = 질문 순서) -->
+  <!-- 1 어떤 일을 했나 : 서류가방 -->
+  <symbol id="ic-1" viewBox="0 0 24 24"><g class="ic"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M3 12.5h18"/></g></symbol>
+  <!-- 2 바쁜 날 하루 : 시계 -->
+  <symbol id="ic-2" viewBox="0 0 24 24"><g class="ic"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></g></symbol>
+  <!-- 3 한가한 날 : 밥그릇 -->
+  <symbol id="ic-3" viewBox="0 0 24 24"><g class="ic"><path d="M3 12h18c0 4.5-4 8-9 8s-9-3.5-9-8Z"/><path d="M9 3.5c-1 1.5 1 2.5 0 5M14.5 3.5c-1 1.5 1 2.5 0 5"/></g></symbol>
+  <!-- 4 기억에 남는 하루 : 달력 -->
+  <symbol id="ic-4" viewBox="0 0 24 24"><g class="ic"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M12 12.5l1 2.2 2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.6 2.3-.3Z"/></g></symbol>
+  <!-- 5 관계를 한 단어로 (갑을) : 기운 저울 -->
+  <symbol id="ic-5" viewBox="0 0 24 24"><g class="ic"><path d="M12 4v16M8 20h8M4.5 9.5 19.5 6"/><path d="M4.5 9.5 2 15h5Z M19.5 6 17 11.5h5Z"/></g></symbol>
+  <!-- 6 납득 안 간 요청 : 수정 연필 -->
+  <symbol id="ic-6" viewBox="0 0 24 24"><g class="ic"><path d="M4 20l1-4.5L15.5 5l3.5 3.5L8.5 19Z M13.5 7l3.5 3.5"/></g></symbol>
+  <!-- 7 거절할 수 있었나 : 금지 -->
+  <symbol id="ic-7" viewBox="0 0 24 24"><g class="ic"><circle cx="12" cy="12" r="9"/><path d="M5.7 5.7l12.6 12.6"/></g></symbol>
+  <!-- 8 엔터에 와서 보니 : 양방향 화살표 -->
+  <symbol id="ic-8" viewBox="0 0 24 24"><g class="ic"><path d="M4 8.5h15l-3.5-3.5M20 15.5H5l3.5 3.5"/></g></symbol>
+  <!-- 9 스튜디오 고르는 기준 : 돋보기 -->
+  <symbol id="ic-9" viewBox="0 0 24 24"><g class="ic"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20.5 20.5"/></g></symbol>
+  <!-- 10 과거의 나에게 : 편지 -->
+  <symbol id="ic-10" viewBox="0 0 24 24"><g class="ic"><rect x="3" y="6" width="18" height="13" rx="1.5"/><path d="M3.5 7l8.5 6.5L20.5 7"/></g></symbol>
+  <!-- 11 가장 큰 차이 : 큰 건물 vs 작은 집 -->
+  <symbol id="ic-11" viewBox="0 0 24 24"><g class="ic"><path d="M2.5 20.5h19M5 20.5V4.5h7.5v16M7.8 8h2M7.8 11.5h2M7.8 15h2M15 20.5v-6l3-2.6 3 2.6v6"/></g></symbol>
+  <!-- 12 전공생이 알아야 할 것 : 전구 -->
+  <symbol id="ic-12" viewBox="0 0 24 24"><g class="ic"><path d="M9.5 17.5h5M10.5 20.5h3M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.1v1.6h5v-1.6c0-.8.4-1.6 1.1-2.1A6 6 0 0 0 12 3Z"/></g></symbol>
+</svg>
+
+<div class="wrap">
+  <header class="top">
+    <a class="logo" href="#home">앨범 뒤의 사람들</a>
+    <nav id="nav"></nav>
+  </header>
+
+  <!-- ========== 히어로 ========== -->
+  <section class="hero" id="about">
+    <div>
+      <div class="eyebrow">ENTERTAINMENT OUTSOURCING INTERVIEW</div>
+      <h1>앨범 뒤의<br>사람들</h1>
+      <p class="lead">아이돌 앨범과 프로모션 뒤에는 크레딧에 잘 드러나지 않는 외주 스튜디오의 사람들이 있습니다. 엔터의 일을 맡아 만드는 이들에게 하루와 관계, 그리고 계속 일하는 이유를 물었습니다.</p>
+      <div class="pilot">
+        <div class="pilot-label">파일럿 인터뷰 <span id="count">0</span></div>
+        <div class="pilot-btns" id="pilot-btns"></div>
+      </div>
+      <p class="hint">오른쪽 말풍선을 누르면 해당 질문으로 이동해요.</p>
+    </div>
+
+    <svg class="hero-art" viewBox="40 30 510 730" role="img" aria-label="질문 열두 개가 담긴 말풍선 더미. 누르면 해당 질문으로 이동">
+      <g>
+        <a href="#q-6" aria-label="질문 6"><g class="pop" style="--i:0"><path class="ink" d="M160 480 C95 488 60 455 85 425 C45 410 50 350 120 352 C150 320 240 330 262 372 C320 360 430 380 425 430 C430 475 340 488 290 482 Z"/><g transform="translate(135 392)"><text class="num" x="-3" y="10" text-anchor="end">6</text><use href="#ic-6" x="3" y="-13" width="26" height="26"/></g></g></a>
+        <a href="#q-2" aria-label="질문 2"><g class="pop" style="--i:1"><path class="ink" d="M448.9 116.4 A38 38 0 1 1 459 124.9 C455 140 450 152 440 170 C444 150 446 135 448.9 116.4 Z"/><g transform="translate(473 92)"><text class="num" x="-3" y="10" text-anchor="end">2</text><use href="#ic-2" x="3" y="-13" width="26" height="26"/></g></g></a>
+        <a href="#q-1" aria-label="질문 1"><g class="pop" style="--i:2"><path class="ink" d="M245 167.6 A125 58 0 1 0 205 166.8 C208 205 230 228 280 240 C258 215 246 195 245 167.6 Z"/><g transform="translate(225 112)"><text class="num" x="-3" y="10" text-anchor="end">1</text><use href="#ic-1" x="3" y="-13" width="26" height="26"/></g></g></a>
+        <a href="#q-3" aria-label="질문 3"><g class="pop" style="--i:3"><path class="ink" d="M420 275.6 A140 62 0 1 0 395 277 L388 305 L405 310 L396 338 L414 343 L425 385 L428 341 L410 336 L419 308 L402 303 Z"/><g transform="translate(395 212)"><text class="num" x="-3" y="10" text-anchor="end">3</text><use href="#ic-3" x="3" y="-13" width="26" height="26"/></g></g></a>
+        <a href="#q-7" aria-label="질문 7"><g class="pop" style="--i:4"><path class="ink" d="M405.2 433 A46 46 0 1 1 415.4 445.2 C400 470 385 480 360 488 C380 470 395 455 405.2 433 Z"/><g transform="translate(440 410)"><text class="num" x="-3" y="10" text-anchor="end">7</text><use href="#ic-7" x="3" y="-13" width="26" height="26"/></g></g></a>
+        <g class="pop" style="--i:5"><path class="ink" d="M290 380 C240 420 214 462 210 505 L226 505 C230 465 255 428 302 394 Z"/></g>
+        <a href="#q-4" aria-label="질문 4"><g class="pop" style="--i:6"><path class="ink" d="M115 238 H238 V268 L300 310 L238 296 V330 H115 Z"/><g transform="translate(171 284)"><text class="num" x="-3" y="10" text-anchor="end">4</text><use href="#ic-4" x="3" y="-13" width="26" height="26"/></g></g></a>
+        <a href="#q-5" aria-label="질문 5"><g class="pop" style="--i:7"><path class="ink" id="scallop"/><g transform="translate(330 350)"><text class="num" x="-3" y="10" text-anchor="end">5</text><use href="#ic-5" x="3" y="-13" width="26" height="26"/></g></g></a>
+        <a href="#q-9" aria-label="질문 9"><g class="pop" style="--i:8"><path class="ink" d="M150 500 H262 V528 L292 530 L262 540 V568 H150 Z"/><g transform="translate(201 534)"><text class="num" x="-3" y="10" text-anchor="end">9</text><use href="#ic-9" x="3" y="-13" width="26" height="26"/></g></g></a>
+        <a href="#q-10" aria-label="질문 10"><g class="pop" style="--i:9"><path class="ink" d="M335 595 A50 50 0 1 1 352.1 592 C360 650 375 700 405 745 C370 705 345 655 335 595 Z"/><g transform="translate(337.5 545)"><text class="num" x="-3" y="10" text-anchor="end">10</text><use href="#ic-10" x="3" y="-13" width="26" height="26"/></g></g></a>
+        <a href="#q-11" aria-label="질문 11"><g class="pop" style="--i:10"><path class="ink" d="M430 610 H528 V668 H430 V652 L404 641 L430 634 Z"/><g transform="translate(481.5 639)"><text class="num" x="-3" y="10" text-anchor="end">11</text><use href="#ic-11" x="3" y="-13" width="26" height="26"/></g></g></a>
+        <a href="#q-12" aria-label="질문 12"><g class="pop" style="--i:11"><path class="ink" d="M171 696.3 A72 72 0 1 1 194 717.4 C165 730 140 738 110 745 C135 730 155 715 171 696.3 Z"/><g transform="translate(232.5 655)"><text class="num" x="-3" y="10" text-anchor="end">12</text><use href="#ic-12" x="3" y="-13" width="26" height="26"/></g></g></a>
+        <a href="#q-8" aria-label="질문 8"><g class="pop" style="--i:12"><g transform="translate(313 446)"><text class="num" x="-3" y="10" text-anchor="end">8</text><use href="#ic-8" x="3" y="-13" width="26" height="26"/></g></g></a>
+      </g>
+    </svg>
+  </section>
+
+  <!-- ========== 인터뷰 본문 (아래 데이터로 자동 생성) ========== -->
+  <main id="interviews"></main>
+
+  <footer>
+    <span><b>인터뷰 모음</b> — 미디어디자인1 취재 프로젝트</span>
+    <span>2026</span>
+  </footer>
+</div>
+
+<script>
+/* =========================================================
+   ✏️ 인터뷰 내용은 여기만 고치면 됩니다.
+   - 하나의 { ... } 가 인터뷰 한 편
+   - qa 배열에 질문(q) / 답변(a) 을 순서대로 추가
+   - section 을 적으면 그 질문 앞에 소제목이 생깁니다
+   - 답변 안에서 빈 줄(\n\n)은 문단 나눔
+   - 질문 번호는 1번부터 자동으로 매겨지고,
+     첫 화면 말풍선의 번호·아이콘(ic-1 ~ ic-12)과 연결됩니다
+   ========================================================= */
+const INTERVIEWER = "인터뷰어";
+
+const interviews = [
+  {
+    name: "류OO",
+    role: "엔터 외주 스튜디오 → 엔터사 · 사회초년생",
+    date: "2026. 11",
+    place: "서면 인터뷰",
+    intro: "안녕하세요! 2x학번 류OO입니다. 저는 이제 막 일을 시작한 사회초년생이고, 업계가 좁은 편이다 보니 아직 조심스러운 부분이 있어 회사명은 익명으로 처리해 주시면 감사하겠습니다!",
+    highlight: "일은 역시 대감집에서.. (두 곳 모두 각자의 방식으로 불지옥이지만 정말입니다)",
+    note: "회사명은 인터뷰이의 요청에 따라 익명으로 처리했습니다. 답변은 사회초년생의 시각에서 나온 개인적인 경험과 생각입니다.",
+    qa: [
+      { section: "01 외주 관련",
+        q: "A 스튜디오에서는 어떤 일을 하셨나요! 엔터 쪽 어떤 작업물들을 하셨는지 궁금합니다.",
+        a: "제가 재직할 당시에는 디자인 실무를 직접 담당하기보다는 전반적인 보조 업무를 주로 진행했습니다. 프로모션 프로젝트에서는 PM 역할을 맡기도 했는데, 외주 업체와의 커뮤니케이션 및 핸들링, 일정 관리, 최종 결과물 납품 등을 한 적이 있습니다." },
+      { q: "바쁜 시기 기준으로 하루 일과를 출근부터 퇴근까지 시간순으로 이야기해주실 수 있나요?",
+        a: "바쁜 시기에는 사실 하루 일과를 시간순으로 설명하기가 어려울 정도로 업무에 쫓겼던 것 같습니다. 전날 밤을 새우거나 새벽에 퇴근하는 경우도 있었고.. 그런 날에는 아침에 택시를 타고 출근해 다시 업무를 이어갔는데요, 정해진 시간에 특정 업무를 한다기보다는 출근한 순간부터 퇴근할 수 있을 때까지 당장 처리해야 하는 일들을 계속 해내는 식이었습니다. 그래서 하루 일과라는 개념보다 말 그대로 하루 종일 밀려드는 업무를 쳐내는 데 가까웠던 것 같습니다..." },
+      { q: "한가한 날은 어떤가요?",
+        a: "한가한 날에는 제시간에 밥도 먹고.. 그날 저녁 시간이 어느 정도 보장된다는 사실만으로도 꽤 행복했던 것 같습니다. 사실 특별할 것 없는 평범한 하루인데 그런 하루가 유난히 감사해지는 경험을 하게 됩니다.." },
+      { q: "가장 기억에 남는 하루가 있을까요? (최악이든, 최고든..)",
+        a: "아무래도 최악의 날들이 먼저 떠오르네요 ㅎㅎ 지금도 몇몇 장면이 생생하게 기억나는데 구체적인 상황을 말씀드리기는 조심스럽지만 제가 생각했던 일반적인 업무의 범위나 상식을 벗어나는 일들이 연달아 있었던 것 같습니다. 사회생활을 막 시작한 입장에서 그런 상황들을 처음 마주하다 보니 당시에는 꽤 충격적으로 느껴졌던 것 같습니다." },
+
+      { section: "02 궁금증",
+        q: "스튜디오에 계실 때 엔터와의 관계를 한 단어로 표현하면 어떤 것이고, 이유는 어떤 걸까요!?",
+        a: "갑을관계..라고 생각합니다. 아무래도 비용을 지급하고 업무를 의뢰하는 주체가 엔터사이다 보니 프로젝트의 진행 과정이나 의사결정에서 엔터 측의 입장이 우선시되는 경우가 많다고 느꼈습니다. 물론 모든 관계가 그렇다고 일반화할 수는 없겠지만, 제가 경험한 환경에서는 비교적 명확한 갑을관계가 형성되어 있다고 생각했습니다." },
+      { q: "납득이 안 갔던 엔터 측의 요청이 있었나요?",
+        a: "당시 스튜디오 내부 일정이나 작업 여건을 고려했을 때 현실적으로 소화하기 어려운 수정 요청들이 있었던 것 같습니다. 그때는 왜 이렇게까지 촉박하게 요청하는지 이해하기 어려운 부분도 있었는데, 이후 엔터사의 입장도 경험해 보니 그쪽 역시 내부적인 사정이나 일정, 의사결정 과정 등 나름의 이유가 있었겠다는 생각이 들었습니다. 양쪽의 입장을 모두 경험하고 나니 이전보다 조금 더 입체적으로 바라보게 된 것 같습니다." },
+      { q: "스튜디오가 거절할 수 있었던 상황이 있었을지 궁금합니다..",
+        a: "이 부분은 제가 직접 의사결정을 담당했던 입장이 아니라 정확하게 말씀드리기는 어려울 것 같습니다. 다만 제가 알기로는 프로젝트를 수주하는 초기 단계에서 일정이나 예산 등의 조건을 고려해 의뢰를 거절하는 경우는 종종 있는 것으로 알고 있습니다.\n\n반면 프로젝트가 이미 진행 중인 상황에서는 클라이언트의 요청을 거절하기가 쉽지 않아 보였습니다. 다른 의견이 있다면 그에 대한 근거와 대안을 제시하면서 설득해야 할 텐데, 제가 경험한 사례에서는 그런 방식으로 조율하기보다는 가능한 한 요청에 맞춰 진행하는 경우가 대부분이었던 것 같습니다." },
+
+      { section: "03 엔터 관련",
+        q: "B 엔터사에 와서 보니까 스튜디오 시절에 이해 못했던 게 있을까요?",
+        a: "이해하지 못했던 부분이라기보다는, 새롭게 느껴졌던 점이 있는데요, 스튜디오에 재직할 당시에는 클라이언트가 요청한 일정과 마감 기한이 굉장히 엄격하고 무엇보다 우선시되어야 하는 조건처럼 느껴졌습니다. 그런데 엔터사의 입장에서 업무를 경험해 보니 내부 사정이나 프로젝트 진행 상황에 따라 제작 일정을 생각보다 유연하게 조율할 수 있다는 점이 신기했습니다. 스튜디오에서는 절대적인 조건처럼 느껴졌던 일정이 엔터 내부에서는 조정 가능한 요소가 되기도 한다는 점에서 양쪽의 입장과 권한 차이를 가장 크게 체감했던 것 같습니다." },
+      { q: "엔터 입장에서는 외주를 맡기는 스튜디오를 어떻게 생각하고, 어떤 기준으로 고르나요?",
+        a: "제가 직접 외주 업체를 컨택하거나 선정하는 업무를 담당해 본 적은 없어 정확한 기준을 말씀드리기는 어려울 것 같습니다. 다만 옆에서 지켜본 바로는 기존 작업물의 스타일과 완성도, 비용, 일정 소화 가능 여부 등이 기본적으로 중요한 기준이 되는 것 같습니다. 여기에 생각보다 크게 작용하는 요소가 이전에 함께 일해 본 경험인 것 같았습니다. 아무래도 내부 업무도 바쁘게 돌아가는 상황에서 커뮤니케이션이나 업무 프로세스에 대한 이해가 맞지 않으면 양쪽 모두 불필요한 어려움을 겪게 될 리스크가 생기는데, 같이 일해본 외주 업체들은 아무래도 그런 부분에서 리스크가 덜 하니 함께 일해 본 업체를 선호하게 되는 것 같습니다. 그래서 단순히 결과물을 잘 만드는 곳뿐만 아니라 이미 협업 경험을 통해 어느 정도 검증되었고 커뮤니케이션이 원활한 곳을 선호하는 것 같았습니다. 결국 작업물의 퀄리티가 좋으면서도 예산과 일정이 맞고, 협업 과정에서 신뢰할 수 있는 곳을 찾는다는 인상을 받았습니다." },
+      { q: "스튜디오에 있던 자기 자신에게 해주고 싶은 말이 있다면?",
+        a: "일은 역시 대감집에서.. (두 곳 모두 각자의 방식으로 불지옥이지만 정말입니다)" },
+
+      { section: "04 마무리",
+        q: "엔터와 스튜디오의 가장 큰 차이점이 뭐라고 생각하시나요?!",
+        a: "제가 느낀 가장 큰 차이점은 조직이 가진 안정성과 창작의 자율성인 것 같습니다. 유명한 엔터사들은 아무래도 규모가 있는 기업이다 보니 비교적 구조화된 조직과 내부 시스템 안에서 업무가 이루어집니다. 반면 스튜디오는 상대적으로 조직의 규모가 작고 유연하다 보니, 특히 (외주 프로젝트가 아닌..) 자체적인 작업에서는 조금 더 자유롭고 실험적인 시도를 할 수 있다는 장점이 있다고 생각합니다.\n\n다만 이러한 차이가 양쪽의 장점인 동시에 단점이 될 수도 있다고 느꼈습니다.\n\n엔터사의 경우 급여 지급이나 복지, 인사 및 노무 관련 제도 등 여러 부분이 개인이 아닌 회사 차원에서 관리되다 보니 상대적으로 제도적인 보호를 받는다는 느낌이 있습니다. 반면 소규모 스튜디오는 회사마다 차이가 크겠지만 이런 부분이 상대적으로 체계화되어 있지 않은 경우도 있을 것 같습니다. 외부 기업과의 거래에서 불합리한 상황을 겪거나, 내부적으로 문제가 발생하더라도 이를 전문적으로 대응해 줄 인력이나 시스템이 충분하지 않을 수 있다는 점에서요.\n\n물론 엔터테인먼트 회사라고 해서 모든 문제가 제도적으로 해결되는 것도 아니고, 모든 스튜디오가 열악한 환경인 것도 아닐 테지만.. 제가 경험한 두 환경을 비교해 보면 엔터는 조직이라는 울타리 안에서 일하는 곳이고 스튜디오는 그만큼 자유로울 수 있지만 동시에 스스로(혹은 스튜디오 자체적으로) 감당해야 하는 부분도 많은 곳이라는 생각이 들었습니다.\n\n결국 어느 한쪽이 무조건 좋다기보다는, 각각의 장단점이 상당히 뚜렷한 환경인 것 같습니다!" },
+      { q: "시각디자인 전공생이 엔터 외주 스튜디오에 간다면 알아야 할 것은 뭘까요?!",
+        a: "조금 추상적인 이야기일 수도 있지만 자신이 왜 이 일을 하고 싶은지에 대한 이유가 어느 정도는 명확해야 한다고 생각합니다. 사실 저 역시 뚜렷한 목표를 가지고 시작했다기보다는 어쩌다 보니 이 업계에서 일을 시작하게 된 경우라 지금도 스스로에게 자주 던지는 질문이기도 합니다.. 물론 유명인과 관련된 작업을 할 수 있다는 점이나 재미있는 프로젝트를 경험할 수 있다는 이유만으로도 충분히 일을 시작할 수 있다고 생각합니다.\n\n다만 실제로 경험해 보니 엔터사든 외주 스튜디오든 업무 강도가 높고 힘든 순간들이 분명히 있기 때문에 단순히 재미있다는 이유만으로 그 시간을 장기적으로 계속 버티기는 쉽지 않을 수도 있겠다는 생각이 들었습니다.\n\n그래서 꼭 엔터테인먼트 업계가 아니더라도 내가 현재 있는 곳에서 무엇을 해 보고 싶은지, 어떤 경험을 쌓고 무엇을 얻어 가고 싶은지에 대한 거창하지 않더라도 자신만의 이유가 있으면 장기적으로 일을 지속할 수 있을 것 같습니다!" },
+    ],
+  },
+  {
+    name: "신OO",
+    role: "엔터 외주 스튜디오 · 보조 디자이너",
+    date: "2026. 11",
+    place: "서면 인터뷰",
+    intro: "엔터 외주 스튜디오에서 보조 디자이너로 일하며 아이돌 앨범의 팩샷 작업을 가장 많이 맡았습니다.",
+    highlight: "고마운데 날 힘들게 하는 존재?,,,",
+    note: "회사명은 익명으로 처리했습니다. 답변은 인터뷰이의 개인적인 경험과 생각입니다.",
+    qa: [
+      { section: "01 외주 관련",
+        q: "A 스튜디오에서는 어떤 일을 하셨나요! 엔터 쪽 어떤 작업물들을 하셨는지 궁금합니다.",
+        a: "스튜디오에서는 보조 디자이너로 일 했는데요, 가장 많이 한 작업은 아이돌의 앨범의 팩샷(Packshot) 작업입니다. 팩샷은 제품의 형태, 구성을 명확하게 보여주는 이미지로, 앨범에 포함되는 여러 구성품의 목업을 완성도 높게 제작하는 것이 중요했습니다.\n이외에도 앨범에 들어가는 포토북의 이미지 배치, 스케줄러 및 배경 그래픽 제작, 클라이언트에게 전달할 파일 정리 등의 업무를 했습니다." },
+      { q: "바쁜 시기 기준으로 하루 일과를 출근부터 퇴근까지 시간순으로 이야기해주실 수 있나요?",
+        a: "저희 스튜디오는 오후 12시에 출근했는데요. 독립 스튜디오 특성상 프로젝트별 일정이 정해져 있기는 했지만, 실제 업무 시간은 상황에 따라 굉장히 유동적이었습니다.\n보통 오후 12시에 출근해서 간단히 점심을 먹고 나면 계속 작업했습니다. 그냥 계속 일합니다……. 가끔 사장님과 함께 산책을 나가기도 했고요.\n저녁은 보통 6~8시쯤 간단하게 먹었습니다. 일이 많이 바쁘면 사장님께서는 스튜디오 안에서 식사하시고, 저에게는 밖에 나가서 먹고 오라고 배려해 주셨는데요. 그렇다고 저 혼자 밖에 나가서 먹었던 적은 없었던 것 같네요.\n퇴근하고 집에 가서도 계속 작업합니다! 카톡이나 전화로 사장님과 소통하구요. 가장 바빴던 날에는 퇴근 후에도 다음 날 아침 9시 정도까지 작업했던 기억이 납니다." },
+      { q: "한가한 날은 어떤가요?",
+        a: "한가한 날은 제게 별다른 업무를 주지 않으십니다. 저는 일을 안해요 . . ." },
+      { q: "가장 기억에 남는 하루가 있을까요? (최악이든, 최고든..)",
+        a: "앞서 말씀 드린 가장 바빴던 날! 타임어택을 하는 기분이었습니다. 저는 계속해서 빠른 작업을 요구받고, 클라이언트 측 담당자와 상사님께서는 실시간으로 피드백을 주시는 상황이었습니다. 좀 지옥 같았습니다. 거의 5분에 팩샷 하나 만들어야하는 수준인데 사실 말이 안되거든요. 기계마냥 손을 움직이는데도 힘들었네요….기억하고싶지않네요…." },
+
+      { section: "02 궁금증",
+        q: "스튜디오에 계실 때 엔터와의 관계를 한 단어로 표현하면 어떤 것이고, 이유는 어떤 걸까요!?",
+        a: "고마운데 날 힘들게 하는 존재?,,,비유가 잘 안떠오르네요. 일과 대금을 주시는 클라이언트라는 점에서는 당연히 감사한 존재입니다. 다만 디자이너의 의견이 관철되는 경우는 거의 없고, 대부분 클라이언트의 요구에 맞춰 계속해서 수정해야 한다는 점이 힘들었습니다. 그렇다고 엔터테인먼트 회사에서 일하시는 분들을 탓하고 싶지는 않아요. 그분들도 굉장히 힘든 환경에서 일하고 계실 테니까요.\n노예와 노예의 관계 같기도 합니다…….결국 양쪽 모두 각자의 위치에서 과중한 업무를 감당하고 있는 것 같아요. 자본주의 사회에서는 어쩔 수 없는 일인가 싶기도 하고요." },
+      { q: "납득이 안 갔던 엔터 측의 요청이 있었나요?",
+        a: "팩샷 제작을 요청받았는데, 제품의 크기와 구성품이 정해지지 않았던 적이 있습니다. 아까 말씀 드린 것처럼 앨범에 들어가는 형태를 명확하게 보여주는 이미지를 제작해야하는데, 일단 천지창조처럼 뭔갈 만든 후에 나중에 수정하라 이거죠. 사장님께서는 한번 제시한 견적의 1/10을 엔터 측에서 요구한 적이 있었대요. 엔터 쪽에서만 있는 상황은 아니겠지만, 디자이너 입장에서 이러면 정말 힘 빠지죠 . . .\n늘 빠른 마감을 제시하는 건 일상이라 납득이 안가진 않지만, 힘들긴 합니다. 엔터 쪽에서 일하는 친구들과 농담으로 엔터에 갈거면 노예에 재능이 있어야한다고 농담하기도 합니다ㅋㅋ 다만 엔터테인먼트 회사 측 담당자들도 워낙 과로하는 경우가 많고, 저희 스튜디오에서 전달한 작업물을 다시 내부 상급자에게 보고하고 피드백을 받아야 하는 구조이기 때문에 빠른 마감을 요청할 수밖에 없는 것 같습니다." },
+      { q: "스튜디오가 거절할 수 있었던 상황이 있었을지 궁금합니다..",
+        a: "너무 말이 안되는 요구면 스튜디오측에서도 충분히 조율이 가능합니다! 정확히 어떤 작업이었는지는 기억나지 않지만, 한 번은 제작물을 거의 2~3일 만에 완성해 달라는 요청을 받았던 것 같습니다. 당시 제가 감당하기에는 무리한 일정이라고 판단해 사장님께 조율을 요청드렸고, 사장님께서 클라이언트와 협의해 마감 기한을 하루나 이틀 정도 연장해 주셨습니다.\n\n사장님께서는 처음 계약한 업무 범위를 벗어나는 추가 작업을 요청받는 경우도 있었는데요. 이런 경우에는 요청을 거절하기도 했고, 작업을 진행하기로 했다면 그에 맞는 추가 대금을 요청하셨습니다." },
+    ],
+  },
+];
+
+/* ---------- 이하 화면 그리는 코드 ---------- */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const pad = n => String(n).padStart(2, "0");
+
+// 말풍선 꼬리 (아래로 휘어진 뾰족한 꼬리)
+const TAIL = `<svg class="tail" viewBox="0 0 34 32" aria-hidden="true"><path d="M3 0 C4 12 2 22 -6 32 C10 25 22 13 28 0"/></svg>`;
+const bubble = (shape, tailSide, inner) =>
+  `<div class="bubble bubble--${shape} tail-${tailSide}">${inner}${TAIL}</div>`;
+
+// 몽글몽글 구름 모양 경로
+function scallop(cx, cy, rx, ry, n, bulge) {
+  let d = "";
+  for (let i = 0; i <= n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    const x = cx + rx * Math.cos(a), y = cy + ry * Math.sin(a);
+    if (i === 0) { d += `M${x.toFixed(1)} ${y.toFixed(1)}`; continue; }
+    const m = ((i - 0.5) / n) * Math.PI * 2;
+    const qx = cx + rx * (1 + bulge) * Math.cos(m), qy = cy + ry * (1 + bulge) * Math.sin(m);
+    d += ` Q${qx.toFixed(1)} ${qy.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}`;
+  }
+  return d + " Z";
+}
+document.getElementById("scallop").setAttribute("d", scallop(335, 350, 58, 62, 13, 0.32));
+
+// 인터뷰 본문
+document.getElementById("interviews").innerHTML = interviews.map((iv, i) => `
+  <article class="interview" id="interview-${i + 1}">
+    <a class="back" href="#home">← 처음으로</a>
+    <div class="iv-head">
+      <div>
+        <div class="no">INTERVIEW ${pad(i + 1)}</div>
+        <h3>${esc(iv.name)}</h3>
+        <div class="role">${esc(iv.role)}</div>
+        <dl>
+          <dt>날짜</dt><dd>${esc(iv.date)}</dd>
+          <dt>장소</dt><dd>${esc(iv.place)}</dd>
+        </dl>
+      </div>
+      <p class="intro">${esc(iv.intro)}</p>
+    </div>
+
+    <div class="quote-cloud reveal">
+      <svg viewBox="0 0 400 220" preserveAspectRatio="none" aria-hidden="true">
+        <path d="${scallop(200, 110, 188, 98, 24, 0.07)}"/>
+      </svg>
+      <p>“${esc(iv.highlight)}”</p>
+    </div>
+
+    <div class="dialogue">
+      ${iv.qa.map(({ section, q, a }, k) => {
+        const n = k + 1;   // 질문 번호 = 아이콘 번호 (질문 목록이 같으면 아이콘도 같음)
+        const qid = i === 0 ? `q-${n}` : `q${i + 1}-${n}`;   // 첫 화면 말풍선은 첫 번째 인터뷰로 연결
+        const sec = section ? `<div class="sec reveal">${esc(section)}</div>` : "";
+        return `${sec}
+        <div class="msg q reveal" id="${qid}">
+          <div class="who">${esc(INTERVIEWER)}</div>
+          ${bubble("rect", "left", `<p><b>Q${n}</b><svg class="qic" aria-hidden="true"><use href="#ic-${n}"/></svg>${esc(q)}</p>`)}
+        </div>
+        <div class="msg a reveal">
+          <div class="who">${esc(iv.name)}</div>
+          ${bubble("round", "right", a.split(/\n+/).map(p => `<p>${esc(p.trim())}</p>`).join(""))}
+        </div>`;
+      }).join("")}
+    </div>
+    ${iv.note ? `<p class="note">${esc(iv.note)}</p>` : ""}
+
+    <div class="iv-foot">
+      <a href="#home">← 처음으로</a>
+      ${interviews[i + 1] ? `<a href="#interview-${i + 2}">다음 인터뷰 · ${esc(interviews[i + 1].name)} →</a>` : (i > 0 ? `<a href="#interview-1">첫 인터뷰 · ${esc(interviews[0].name)} →</a>` : "")}
+    </div>
+  </article>
+`).join("");
+
+document.getElementById("count").textContent = `${interviews.length}명`;
+document.getElementById("pilot-btns").innerHTML = interviews.map((iv, i) => `
+  <a href="#interview-${i + 1}" aria-label="${esc(iv.name)} 인터뷰 바로가기">
+    ${bubble("rect", "left", `<span class="pn">${pad(i + 1)}</span><span class="pname">${esc(iv.name)}</span><span class="prole">${esc(iv.role)}</span><span class="arrow">→</span>`)}
+  </a>`).join("");
+
+// 스크롤하면 말풍선이 톡 나타나기
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+}, { threshold: 0.15 });
+document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+
+// ---------- 화면 전환 ----------
+// #home → 첫 화면 / #interview-N → N번째 인터뷰 / #q-N → 첫 인터뷰의 N번 질문 / #q2-N → 두 번째 인터뷰의 N번 질문
+document.getElementById("nav").innerHTML = interviews.map((iv, i) =>
+  `<a href="#interview-${i + 1}" data-iv="${i}">${pad(i + 1)} ${esc(iv.name)}</a>`).join("");
+
+function route() {
+  const h = decodeURIComponent(location.hash.slice(1));
+  let iv = null, target = null, m;
+  if ((m = h.match(/^interview-(\d+)$/))) iv = +m[1] - 1;
+  else if ((m = h.match(/^q-(\d+)$/))) { iv = 0; target = h; }
+  else if ((m = h.match(/^q(\d+)-(\d+)$/))) { iv = +m[1] - 1; target = h; }
+  if (iv === null || !interviews[iv]) iv = null;
+
+  const root = document.documentElement;
+  root.classList.toggle("home", iv === null);
+  root.classList.toggle("reading", iv !== null);
+  document.querySelectorAll(".interview").forEach((el, k) => el.classList.toggle("active", k === iv));
+  document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", +a.dataset.iv === iv));
+
+  setTimeout(() => {
+    let el = target && document.getElementById(target);
+    if (el && el.previousElementSibling?.classList.contains("sec")) el = el.previousElementSibling;
+    if (el) { scrollTo(0, el.getBoundingClientRect().top + scrollY - 32); el.classList.add("in"); }
+    else scrollTo(0, 0);
+  }, 0);
+}
+addEventListener("hashchange", route);
+route();
+</script>
+</body>
+</html>
